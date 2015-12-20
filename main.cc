@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
     
     int rows = 32;
     int chain = 1;
-    Canvas *led = new RGBMatrix(&io, rows, chain, 1);
+    Canvas *led = new RGBMatrix(&io, rows, chain);
     led->Clear();
     while (true) {
         DrawOnCanvas(led);
