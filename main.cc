@@ -107,22 +107,11 @@ static void DrawOnCanvas(Canvas *led) {
     led->SetPixel(19, 15, 255, 255, 0);
     led->SetPixel(18, 13, 0, 255, 255);
     led->SetPixel(16, 16, 99, 234, 23);
-    /*
-        std::string string = "(while :; do python countdownToChristmas.py ; sleep 1 ; done) | sudo ./text-example -f fonts/5x7.bdf -y25 -C0,0,255";
-        system(string.c_str());*/
-    /*
-    char line[1024] = "Merry";
-    char line2[1024] = "X-mas";
-    Color color(0, 0, 255);
-    const char *bdf = "fonts/4x6.bdf";
-    rgb_matrix::Font font;
-    if (!font.LoadFont(bdf)) {
-        printf("ERROR FONT COULD NOT LOAD");
-    }
-    rgb_matrix::DrawText(led, font, 0, 25, color, line);
-    sleep(5);
-    rgb_matrix::DrawText(led, font, 0, 25, color, line2);
-     */
+    led->SetPixel(9, 20, 234, 86, 98);
+    led->SetPixel(14, 7, 87, 250, 23);
+    led->SetPixel(12, 10, 234, 0, 234);
+    led->SetPixel(15, 13, 234, 98, 76);
+    
 }
 
 static void countdown(Canvas *led) {
