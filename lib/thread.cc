@@ -40,25 +40,14 @@ void Thread::WaitStopped() {
   started_ = false;
 }
 
-void Thread::Start(int priority, uint32_t affinity_mask) {
-  assert(!started_);  // Did you call WaitStopped() ?
+void Thread::Start(int priority) {
+  assert(!started_);
   pthread_create(&thread_, NULL, &PthreadCallRun, this);
 
   if (priority > 0) {
     struct sched_param p;
     p.sched_priority = priority;
     pthread_setschedparam(thread_, SCHED_FIFO, &p);
-  }
-
-  if (affinity_mask != 0) {
-    cpu_set_t cpu_mask;
-    CPU_ZERO(&cpu_mask);
-    for (int i = 0; i < 32; ++i) {
-      if ((affinity_mask & (1<<i)) != 0) {
-        CPU_SET(i, &cpu_mask);
-      }
-    }
-    pthread_setaffinity_np(thread_, sizeof(cpu_mask), &cpu_mask);
   }
 
   started_ = true;

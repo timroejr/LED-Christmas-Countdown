@@ -33,7 +33,7 @@ struct Font::Glyph {
   rowbitmap_t bitmap[0];  // contains 'height' elements.
 };
 
-Font::Font() : font_height_(-1), base_line_(0) {}
+Font::Font() : font_height_(-1) {}
 Font::~Font() {
   for (CodepointGlyphMap::iterator it = glyphs_.begin();
        it != glyphs_.end(); ++it) {
@@ -106,8 +106,7 @@ int Font::CharacterWidth(uint32_t unicode_codepoint) const {
   return g ? g->width : -1;
 }
 
-int Font::DrawGlyph(Canvas *c, int x_pos, int y_pos,
-                    const Color &color, const Color *bgcolor,
+int Font::DrawGlyph(Canvas *c, int x_pos, int y_pos, const Color &color,
                     uint32_t unicode_codepoint) const {
   const Glyph *g = FindGlyph(unicode_codepoint);
   if (g == NULL) g = FindGlyph(kUnicodeReplacementCodepoint);
@@ -119,17 +118,10 @@ int Font::DrawGlyph(Canvas *c, int x_pos, int y_pos,
     for (int x = 0; x < g->width; ++x, x_mask >>= 1) {
       if (row & x_mask) {
         c->SetPixel(x_pos + x, y_pos + y, color.r, color.g, color.b);
-      } else if (bgcolor) {
-          c->SetPixel(x_pos + x, y_pos + y, bgcolor->r, bgcolor->g, bgcolor->b);
       }
     }
   }
   return g->width;
-}
-
-int Font::DrawGlyph(Canvas *c, int x_pos, int y_pos, const Color &color,
-                    uint32_t unicode_codepoint) const {
-  return DrawGlyph(c, x_pos, y_pos, color, NULL, unicode_codepoint);
 }
 
 }  // namespace rgb_matrix
