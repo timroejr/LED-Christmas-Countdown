@@ -107,8 +107,8 @@ static void DrawOnCanvas(Canvas *led) {
     led->SetPixel(19, 15, 255, 255, 0);
     led->SetPixel(18, 13, 0, 255, 255);
     led->SetPixel(16, 16, 99, 234, 23);
-    led->SetPixel(9, 20, 234, 86, 98);
-    led->SetPixel(14, 12, 87, 250, 23);
+    led->SetPixel(9, 25, 234, 86, 98);
+    led->SetPixel(14, 7, 87, 250, 23);
     led->SetPixel(12, 10, 234, 0, 234);
     led->SetPixel(15, 13, 234, 98, 76);
     
