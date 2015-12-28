@@ -1,5 +1,6 @@
 #About
 [![Build Status](https://travis-ci.org/timroejr/LED-Christmas-Countdown.svg)](https://travis-ci.org/timroejr/LED-Christmas-Countdown)
+
 LED-Christmas-Countdown is a small program designed for the Raspberry Pi that shows a christmas tree followed by a countdown on a 32x32 LED Matrix Board.
 
 You can find the results of this project in the images folder of this repo.
