@@ -15,20 +15,61 @@
 #ifndef RPI_RGBMATRIX_FRAMEBUFFER_INTERNAL_H
 #define RPI_RGBMATRIX_FRAMEBUFFER_INTERNAL_H
 
-#include "led-matrix.h"
+#include <stdint.h>
+
+#include "hardware-mapping.h"
 
 namespace rgb_matrix {
+class GPIO;
+class PinPulser;
+namespace internal {
+
+// An opaque type used within the framebuffer that can be used
+// to copy between PixelMappers.
+struct PixelDesignator {
+  PixelDesignator() : gpio_word(-1), r_bit(0), g_bit(0), b_bit(0), mask(~0){}
+  int gpio_word;
+  uint32_t r_bit;
+  uint32_t g_bit;
+  uint32_t b_bit;
+  uint32_t mask;
+};
+
+class PixelMapper {
+public:
+  PixelMapper(int width, int height);
+  ~PixelMapper();
+
+  // Get a writable version of the PixelDesignator. Outside Framebuffer used
+  // by the RGBMatrix to re-assign mappings to new PixelMappers.
+  PixelDesignator *get(int x, int y);
+
+  inline int width() const { return width_; }
+  inline int height() const { return height_; }
+
+private:
+  const int width_;
+  const int height_;
+  PixelDesignator *const buffer_;
+};
+
 // Internal representation of the frame-buffer that as well can
 // write itself to GPIO.
 // Our internal memory layout mimicks as much as possible what needs to be
 // written out.
-class RGBMatrix::Framebuffer {
+class Framebuffer {
 public:
-  Framebuffer(int rows, int columns);
+  Framebuffer(int rows, int columns, int parallel,
+              int scan_mode,
+              bool swap_green_blue, bool inverse_color,
+              PixelMapper **mapper);
   ~Framebuffer();
 
-  // Initialize GPIO bits for output.
-  static void InitGPIO(GPIO *io);
+  // Initialize GPIO bits for output. Only call once.
+  static void InitHardwareMapping(const char *named_hardware);
+  static void InitGPIO(GPIO *io, int rows, int parallel,
+                       bool allow_hardware_pulsing,
+                       int pwm_lsb_nanoseconds);
 
   // Set PWM bits used for output. Default is 11, but if you only deal with
   // simple comic-colors, 1 might be sufficient. Lower require less CPU.
@@ -40,52 +81,44 @@ public:
   void set_luminance_correct(bool on) { do_luminance_correct_ = on; }
   bool luminance_correct() const { return do_luminance_correct_; }
 
+  // Set brightness in percent; range=1..100
+  // This will only affect newly set pixels.
+  void SetBrightness(uint8_t b) {
+    brightness_ = (b <= 100 ? (b != 0 ? b : 1) : 100);
+  }
+  uint8_t brightness() { return brightness_; }
+
   void DumpToMatrix(GPIO *io);
 
   // Canvas-inspired methods, but we're not implementing this interface to not
   // have an unnecessary vtable.
-  inline int width() const { return columns_; }
-  inline int height() const { return rows_; }
+  int width() const;
+  int height() const;
   void SetPixel(int x, int y, uint8_t red, uint8_t green, uint8_t blue);
   void Clear();
   void Fill(uint8_t red, uint8_t green, uint8_t blue);
 
 private:
-  // Map color
-  inline uint16_t MapColor(uint8_t c);
+  static const struct HardwareMapping *hardware_mapping_;
 
+  void InitDefaultDesignator(int x, int y, PixelDesignator *designator);
+  inline void  MapColors(uint8_t r, uint8_t g, uint8_t b,
+                         uint16_t *red, uint16_t *green, uint16_t *blue);
   const int rows_;     // Number of rows. 16 or 32.
+  const int parallel_; // Parallel rows of chains. 1 or 2.
+  const int height_;   // rows * parallel
   const int columns_;  // Number of columns. Number of chained boards * 32.
+
+  const int scan_mode_;
+  const bool swap_green_blue_;
+  const bool inverse_color_;
 
   uint8_t pwm_bits_;   // PWM bits to display.
   bool do_luminance_correct_;
+  uint8_t brightness_;
 
   const int double_rows_;
   const uint8_t row_mask_;
-
-  union IoBits {
-    struct {
-      // These reflect the GPIO mapping. The Revision1 and Revision2 boards
-      // have different GPIO mappings for 0/1 vs 3/4. Just use both.
-      unsigned int output_enable_rev1 : 1;  // 0
-      unsigned int clock_rev1 : 1;          // 1
-      unsigned int output_enable_rev2 : 1;  // 2
-      unsigned int clock_rev2  : 1;         // 3
-      unsigned int strobe : 1;              // 4
-      unsigned int unused2 : 2;             // 5..6
-      unsigned int row : 4;                 // 7..10
-      unsigned int unused3 : 6;             // 11..16
-      unsigned int r1 : 1;                  // 17
-      unsigned int g1 : 1;                  // 18
-      unsigned int unused4 : 3;
-      unsigned int b1 : 1;                  // 22
-      unsigned int r2 : 1;                  // 23
-      unsigned int g2 : 1;                  // 24
-      unsigned int b2 : 1;                  // 25
-    } bits;
-    uint32_t raw;
-    IoBits() : raw(0) {}
-  };
 
   // The frame-buffer is organized in bitplanes.
   // Highest level (slowest to cycle through) are double rows.
@@ -93,8 +126,11 @@ private:
   // Each bitplane-column is pre-filled IoBits, of which the colors are set.
   // Of course, that means that we store unrelated bits in the frame-buffer,
   // but it allows easy access in the critical section.
-  IoBits *bitplane_buffer_;
-  inline IoBits *ValueAt(int double_row, int column, int bit);
+  gpio_bits_t *bitplane_buffer_;
+  inline gpio_bits_t *ValueAt(int double_row, int column, int bit);
+
+  PixelMapper **shared_mapper_;  // Storage in RGBMatrix.
 };
+}  // namespace internal
 }  // namespace rgb_matrix
 #endif // RPI_RGBMATRIX_FRAMEBUFFER_INTERNAL_H
