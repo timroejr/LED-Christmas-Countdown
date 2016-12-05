@@ -144,7 +144,8 @@ int main(int argc, char *argv[]) {
     
     int rows = 32;
     int chain = 1;
-    Canvas *led = new RGBMatrix(&io, rows, chain);
+	bool disable_hardware_pulsing = true;
+    Canvas *led = new RGBMatrix(&io, rows, chain, disable_hardware_pulsing);
     led->Clear();
     while (true) {
         DrawOnCanvas(led);
