@@ -141,10 +141,17 @@ int main(int argc, char *argv[]) {
     if (!io.Init()) {
         return 1;
     }
+	
+	RGBMatrix::Options matrix_options;
+	
+	matrix_options.rows = 32;
+	matrix_options.chain_length = 1;
+	matrix_options.parallel = 1;
+	matrix_options.disable_hardware_pulsing = true;
     
     int rows = 32;
     int chain = 1;
-    Canvas *led = new RGBMatrix(&io, rows, chain);
+    Canvas *led = new RGBMatrix(&io, matrix_options);
     led->Clear();
     while (true) {
         DrawOnCanvas(led);
